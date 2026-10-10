@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixabay Editor's Choice</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 5px; color: #2c3e50; }
+        .subtitle { text-align: center; margin-bottom: 30px; color: #7f8c8d; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .gallery-item { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: transform 0.2s ease; }
+        .gallery-item:hover { transform: translateY(-5px); }
+        .gallery-item img { width: 100%; height: 200px; object-fit: cover; display: block; }
+        .photo-info { padding: 12px; font-size: 14px; color: #555; }
+        .load-more-container { text-align: center; margin-bottom: 40px; }
+        .btn { background-color: #3498db; color: white; border: none; padding: 12px 30px; font-size: 16px; border-radius: 25px; cursor: pointer; transition: background-color 0.2s ease; box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3); }
+        .btn:hover { background-color: #2980b9; }
+        .btn:disabled { background-color: #bdc3c7; cursor: not-allowed; box-shadow: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Вибір редакції Pixabay</h1>
+        <p class="subtitle">Найкрасивіші фотографії за версією редакції</p>
+        <div id="gallery" class="gallery"></div>
+        <div class="load-more-container">
+            <button id="loadMoreBtn" class="btn">Завантажити ще</button>
+        </div>
+    </div>
+    <script>
+        const API_KEY = 'ВАШ_API_КЛЮЧ';
+        const BASE_URL = 'https://pixabay.com/api/';
+        const galleryEl = document.getElementById('gallery');
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        let currentPage = parseInt(localStorage.getItem('pixabayPage')) || 1;
+        const perPage = 12;
+
+        async function fetchImages(page) {
+            try {
+                const response = await fetch(`${BASE_URL}?key=${API_KEY}&editors_choice=true&per_page=${perPage}&page=${page}`);
+                if (!response.ok) throw new Error();
+                const data = await response.json();
+                return data.hits;
+            } catch {
+                return [];
+            }
+        }
+
+        function renderImages(images) {
+            images.forEach(image => {
+                const item = document.createElement('div');
+                item.classList.add('gallery-item');
+                item.innerHTML = `
+                    <img src="${image.webformatURL}" alt="${image.tags}">
+                    <div class="photo-info">❤️ ${image.likes} &nbsp;&nbsp; 👁️ ${image.views}</div>
+                `;
+                galleryEl.appendChild(item);
+            });
+        }
+
+        async function initApp() {
+            galleryEl.innerHTML = '';
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.textContent = 'Завантаження...';
+            for (let i = 1; i <= currentPage; i++) {
+                const images = await fetchImages(i);
+                renderImages(images);
+            }
+            loadMoreBtn.textContent = 'Завантажити ще';
+            loadMoreBtn.disabled = false;
+        }
+
+        loadMoreBtn.addEventListener('click', async () => {
+            currentPage++;
+            localStorage.setItem('pixabayPage', currentPage);
+            loadMoreBtn.textContent = 'Завантаження...';
+            loadMoreBtn.disabled = true;
+            const images = await fetchImages(currentPage);
+            renderImages(images);
+            loadMoreBtn.textContent = 'Завантажити ще';
+            loadMoreBtn.disabled = false;
+        });
+
+        initApp();
+    </script>
+</body>
+</html>  
